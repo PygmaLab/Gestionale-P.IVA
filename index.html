@@ -4181,6 +4181,11 @@ function costruisciXML(f, progressivo){
                      (pf.email ? '        ' + tglim('Email', pf.email, 256) + '\n' : '');
   const civicoPf = pf.civico ? '        ' + tglim('NumeroCivico', pf.civico, 8) + '\n' : '';
 
+  // Il wizard del portale pretende DataRiferimentoTerminiPagamento (lo schema XSD no):
+  // si scrive la data fattura e, se c'è la scadenza, i giorni che passano fino a lì.
+  const scadOk = /^\d{4}-\d{2}-\d{2}$/.test(f.scadenzaPagamento||'');
+  const giorniTermini = scadOk ? Math.round((Date.parse(f.scadenzaPagamento) - Date.parse(f.dataEmissione)) / 86400000) : -1;
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <p:FatturaElettronica versione="FPR12"
   xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2"
@@ -4255,7 +4260,8 @@ ${linee}
       ${tg('CondizioniPagamento','TP02')}
       <DettaglioPagamento>
         ${tg('ModalitaPagamento', MODALITA_XML[f.metodo] || 'MP05')}
-${/^\d{4}-\d{2}-\d{2}$/.test(f.scadenzaPagamento||'') ? '        ' + tg('DataScadenzaPagamento', f.scadenzaPagamento) + '\n' : ''}        ${tg('ImportoPagamento', num2(t.totale))}
+        ${tg('DataRiferimentoTerminiPagamento', f.dataEmissione)}
+${giorniTermini >= 0 && giorniTermini <= 999 ? '        ' + tg('GiorniTerminiPagamento', giorniTermini) + '\n' : ''}${scadOk ? '        ' + tg('DataScadenzaPagamento', f.scadenzaPagamento) + '\n' : ''}        ${tg('ImportoPagamento', num2(t.totale))}
 ${testoXml(pf.banca) ? '        ' + tglim('IstitutoFinanziario', pf.banca, 80) + '\n' : ''}        ${tg('IBAN', pf.iban)}
       </DettaglioPagamento>
     </DatiPagamento>
