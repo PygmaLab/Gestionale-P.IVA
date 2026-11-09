@@ -1590,6 +1590,10 @@ function aggiornaCantiere(){
 function vDashboard(){
   const inviati = db.preventivi.filter(p=>p.stato==='Inviato');
   const bozze   = db.preventivi.filter(p=>p.stato==='Bozza');
+  // Cantieri aperti: documenti ancora in costruzione, contati al netto di voci spente e sconto
+  const cantieriAperti = db.cantieri.filter(c=>c.stato==='Aperto');
+  const contiAperti = cantieriAperti.map(contiCantiere);
+  const daQuotare = somma(contiAperti, c=>c.daQuotare);
   const inCorso = db.progetti.filter(p=>p.stato==='In corso');
   const daIncassare = db.fatture.filter(f=>f.statoPagamento==='Emessa'||fatturaScaduta(f));
   const scadute = db.fatture.filter(fatturaScaduta);
@@ -1632,6 +1636,11 @@ function vDashboard(){
       <div class="lbl">In trattativa</div>
       <div class="big">${eur(somma(inviati,p=>p.importo))}</div>
       <div class="det">${inviati.length} ${inviati.length===1?'preventivo inviato':'preventivi inviati'} · ${bozze.length} in bozza</div>
+    </div>
+    <div class="stat">
+      <div class="lbl">In cantiere</div>
+      <div class="big">${eur(somma(contiAperti,c=>c.totale))}</div>
+      <div class="det">${plurale(cantieriAperti.length,'cantiere aperto','cantieri aperti')}${daQuotare?' · <b style="color:var(--warn)">'+plurale(daQuotare,'voce da quotare','voci da quotare')+'</b>':''}</div>
     </div>
     <div class="stat">
       <div class="lbl">Progetti in corso</div>
